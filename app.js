@@ -10,7 +10,7 @@ try {
     
     app.use(express.json());
     app.use(corsMiddleware);
-    app.use('/api',router);
+    app.use('/api', router);
      
     const port = process.env.PORT || 8000
     app.listen(port,() => console.log('El servidor de Wassapp esta esprando su peticion'));
