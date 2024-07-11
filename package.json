@@ -9,7 +9,7 @@
     "dev": "nodemon app.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "marcos vejega y luis romero",
   "license": "ISC",
   "dependencies": {
     "axios": "^1.7.2",
