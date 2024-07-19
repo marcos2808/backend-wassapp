@@ -21,19 +21,17 @@ try {
         }
     });
 
-    // io.on('connection', (socket) => {
-    //     console.log('Nueva conexión de cliente:', socket.id);
+    io.on('connection', (socket) => {
+        console.log('Nueva conexión de cliente:', socket.id);
 
-    //     // Aquí puedes manejar los eventos que quieres escuchar y emitir
-    //     socket.on('mensaje', (data) => {
-    //         console.log('Mensaje recibido:', data);
-    //         io.emit('mensaje', data); // Reenvía el mensaje a todos los clientes conectados
-    //     });
-
-    //     socket.on('disconnect', () => {
-    //         console.log('Cliente desconectado:', socket.id);
-    //     });
-    // });
+        socket.on('message',(message, nickname) => {
+            //envio al resto de clientes conectados 
+            socket.broadcast.emit('messages', {
+                body: message,
+                from: nickname
+            })
+        })
+    });
 
     server.listen(port, () => {
         console.log(`El servidor de Wassapp está esperando su petición en el puerto ${port}`);
