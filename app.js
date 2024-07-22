@@ -20,7 +20,7 @@ try {
             origin: '*',
         }
     });
-
+    
     io.on('connection', (socket) => {
         console.log('Nueva conexión de cliente:', socket.id);
 
