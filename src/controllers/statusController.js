@@ -1,5 +1,8 @@
 import Status from '../models/statusModel.js';
 import bucket from '../db/firebase-admin.js'; // Asegúrate de que bucket esté configurado correctamente
+import jwt from 'jsonwebtoken'; // Importa jwt para verificar el token
+
+
 
 export const createStatus = async (req, res) => {
     try {
@@ -25,7 +28,8 @@ export const createStatus = async (req, res) => {
         });
 
         blobStream.on('finish', async () => {
-            const imageUrl = `https://storage.googleapis.com/${bucket.name}/${blob.name}`;
+            // Obtener la URL correcta de Firebase
+            const imageUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(blob.name)}?alt=media`;
 
             // Guardar el estado en MongoDB
             const status = new Status({ userId, imageUrl });
@@ -40,12 +44,44 @@ export const createStatus = async (req, res) => {
     }
 };
 
-
 // Función para obtener todos los estados
 export const getAllStatuses = async (req, res) => {
   try {
       const statuses = await Status.find().populate('userId', 'email'); // Opcional: incluir detalles del usuario
       res.status(200).json(statuses);
+  } catch (error) {
+      res.status(500).json({ message: error.message });
+  }
+};
+// Función para eliminar un estado
+export const deleteStatus = async (req, res) => {
+  try {
+      const { statusId } = req.params;
+      const token = req.headers.authorization.split(' ')[1];
+
+      if (!token) return res.status(401).json({ message: 'Access token is missing or invalid.' });
+
+      const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+      const userId = decodedToken.userId;
+
+      const status = await Status.findById(statusId);
+
+      if (!status) {
+          return res.status(404).json({ message: 'Status not found.' });
+      }
+
+      if (status.userId.toString() !== userId) {
+          return res.status(403).json({ message: 'You are not authorized to delete this status.' });
+      }
+
+      // Eliminar la imagen de Firebase Storage
+      const fileName = status.imageUrl.split('/').pop().split('?')[0];
+      await bucket.file(fileName).delete();
+
+      // Eliminar el estado de la base de datos
+      await status.deleteOne();
+
+      res.status(200).json({ message: 'Status deleted successfully.' });
   } catch (error) {
       res.status(500).json({ message: error.message });
   }
