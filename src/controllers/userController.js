@@ -1,26 +1,73 @@
 import User from "../models/userModel.js";
+import bucket from "../db/firebase-admin.js";
+import multer from "multer";
+
+// Configuración de multer para manejar la carga de archivos
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage }).single('profileImage');
 
 class UserController {
     static async createUser(req, res) {
-        const { email, password} = req.body;
-
-        if (!email || !password) {
-            return res.status(400).json({ message: "Email and password are required to create a user." });
-        }
-
-        try {
-            const existingUser = await User.findOne({ email });
-            if (existingUser) {
-                return res.status(400).json({ message: "Email already exists." });
+        upload(req, res, async (err) => {
+            if (err) {
+                return res.status(400).json({ message: 'Error uploading file.' });
             }
 
-            const user = new User({ email, password});
-            await user.save();
+            const { email, password } = req.body;
 
-            res.status(201).json({ message: "User created successfully."});
-        } catch (error) {
-            res.status(500).json({ message: error.message });
-        }
+            // Validación de datos
+            if (!email || !password) {
+                return res.status(400).json({ message: "Email and password are required to create a user." });
+            }
+
+            // Validación de imagen de perfil
+            const file = req.file;
+            if (!file) {
+                return res.status(400).json({ message: "Profile image is required." });
+            }
+
+            try {
+                // Verificar si el usuario ya existe
+                const existingUser = await User.findOne({ email });
+                if (existingUser) {
+                    return res.status(400).json({ message: "Email already exists." });
+                }
+
+                // Subir imagen a Firebase Storage
+                const blob = bucket.file(`profileImages/${Date.now()}_${file.originalname}`);
+                const blobStream = blob.createWriteStream({
+                    metadata: {
+                        contentType: file.mimetype
+                    }
+                });
+
+                blobStream.on('error', (error) => {
+                    console.error(error);
+                    return res.status(500).json({ message: 'Error uploading image.' });
+                });
+
+                blobStream.on('finish', async () => {
+                    const profileImageUrl = await blob.getSignedUrl({
+                        action: 'read',
+                        expires: '03-01-2500'
+                    });
+
+                    // Crear usuario
+                    const user = new User({
+                        email,
+                        password,
+                        profileImage: profileImageUrl[0] // Almacenar la URL de la imagen en la base de datos
+                    });
+
+                    await user.save();
+                    res.status(201).json({ message: "User created successfully." });
+                });
+
+                blobStream.end(file.buffer);
+            } catch (error) {
+                res.status(500).json({ message: error.message });
+            }
+        });
     }
 
     static async deleteUser(req, res) {
