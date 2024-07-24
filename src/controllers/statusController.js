@@ -1,13 +1,13 @@
 import Status from '../models/statusModel.js';
 import bucket from '../db/firebase-admin.js'; // Asegúrate de que bucket esté configurado correctamente
 import jwt from 'jsonwebtoken'; // Importa jwt para verificar el token
-
+import User from '../models/userModel.js';
 
 
 export const createStatus = async (req, res) => {
     try {
         const image = req.file;
-        const { userId } = req.body; // Asegúrate de que el userId se pase en el body
+        const { userEmail, title, description } = req.body;
 
         if (!image) {
             return res.status(400).json({ message: 'Image file is required.' });
@@ -32,7 +32,7 @@ export const createStatus = async (req, res) => {
             const imageUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(blob.name)}?alt=media`;
 
             // Guardar el estado en MongoDB
-            const status = new Status({ userId, imageUrl });
+            const status = new Status({ userEmail, imageUrl, title, description });
             await status.save();
 
             res.status(200).json({ message: 'Status created successfully.', status });
@@ -44,15 +44,22 @@ export const createStatus = async (req, res) => {
     }
 };
 
+
+
+
+
 // Función para obtener todos los estados
 export const getAllStatuses = async (req, res) => {
   try {
-      const statuses = await Status.find().populate('userId', 'email'); // Opcional: incluir detalles del usuario
-      res.status(200).json(statuses);
+    const statuses = await Status.find().sort({ createdAt: -1 }); // Ordenar por fecha de creación descendente
+    res.json(statuses);
   } catch (error) {
-      res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'Error fetching statuses', error });
   }
 };
+
+
+
 // Función para eliminar un estado
 export const deleteStatus = async (req, res) => {
   try {

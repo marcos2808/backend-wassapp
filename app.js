@@ -4,6 +4,7 @@ import http from 'http';
 import connectDB from './src/db/mongoConnection.js';
 import corsMiddleware from './src/middlewares/corsMiddlewares.js';
 import router from './src/routing/index.js';
+import './src/cronJobs.js';
 
 try {
     const app = express();
