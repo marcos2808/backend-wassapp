@@ -132,6 +132,21 @@ class UserController {
             res.status(500).json({ message: error.message });
         }
     }
+
+    static async getProfileImage(req, res) {
+        try {
+            // Verifica si req.user está definido y tiene profileImage
+            if (!req.user || !req.user.profileImage) {
+                return res.status(404).json({ message: 'Profile image not found' });
+            }
+
+            // Devuelve la URL de la imagen de perfil
+            res.json({ profileImage: req.user.profileImage });
+        } catch (error) {
+            console.error('Error fetching profile image:', error);
+            res.status(500).json({ message: 'Server error' });
+        }
+    }
 }
 
 export default UserController;
