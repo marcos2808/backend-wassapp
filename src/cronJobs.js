@@ -18,7 +18,7 @@ const deleteOldStatuses = async () => {
 
         // Elimina los estados que son más viejos que el límite de tiempo
         const result = await Status.deleteMany({ createdAt: { $lt: timeLimit } });
-        console.log(`${result.deletedCount} statuses deleted.`);
+        console.log(`${result.deletedCount} statuses deleted. CRONJOBS`);
     } catch (error) {
         console.error('Error deleting old statuses:', error.message);
     }
