@@ -28,7 +28,6 @@ try {
             origin: '*',
         }
     });
-
     // id: socket
     const users = new Map()
     let userId = ''
