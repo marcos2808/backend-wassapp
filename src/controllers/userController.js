@@ -1,4 +1,5 @@
 import User from "../models/userModel.js";
+import Chat from '../models/chatModel.js'
 import bucket from "../db/firebase-admin.js";
 import multer from "multer";
 
@@ -10,6 +11,7 @@ class UserController {
     static async createUser(req, res) {
         upload(req, res, async (err) => {
             if (err) {
+                console.log(err)
                 return res.status(400).json({ message: 'Error uploading file.' });
             }
 
@@ -58,6 +60,17 @@ class UserController {
                         password,
                         profileImage: profileImageUrl[0] // Almacenar la URL de la imagen en la base de datos
                     });
+
+                    // Crear chat del usuario creado con todos los usuarios existentes en base de datos
+                    const dbUsers = await User.find()
+                    for (const dbUser of dbUsers) {
+                        if (user._id == dbUser._id){
+                            continue
+                        }
+                        const chat = new Chat()
+                        chat.members = [user._id, dbUser._id]
+                        chat.save()
+                    }
 
                     await user.save();
                     res.status(201).json({ message: "User created successfully." });
